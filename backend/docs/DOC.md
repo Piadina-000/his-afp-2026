@@ -151,12 +151,12 @@ L'applicazione segue un'architettura a livelli, nella quale ogni componente ha u
 
 Il flusso principale di una richiesta REST è il seguente:
 
-![](/home/pietro/Projects/AFP/AFP2027/SIO/his-afp/backend/docs/spring-architettura-base.png "Architettura SringBoot")
+![](./spring-architettura-base.png "Architettura SringBoot")
 
 Il Mapper non è necessariamente un livello attraversato in modo sequenziale da tutte le operazioni: viene utilizzato dal Service quando occorre convertire i dati tra Entity e DTO.
 
 #### Diagramma avanzato
-![](/home/pietro/Projects/AFP/AFP2027/SIO/his-afp/backend/docs/spring-architect-adv.png)
+![](./spring-architect-adv.png)
 
 ### 4.1 Flusso completo di una richiesta
 
@@ -178,14 +178,13 @@ In caso di errore, entra in gioco il `GlobalExceptionHandler`, che intercetta le
 
 ## 5. Analisi dei componenti
 
-### 5.1 BackendApplication.java – Classe principale
+### 5.1 [BackendApplication.java](../src/main/java/com/sio/backend/BackendApplication.java) – Classe principale
 
 È il punto di ingresso dell'applicazione Spring Boot.
 
 Contiene il metodo `main`, che avvia il framework e inizializza il contesto Spring.
 
 Esempio:
-
 ```java
 package com.sio.backend;
 
@@ -212,7 +211,7 @@ L'annotazione `@SpringBootApplication` racchiude tre funzionalità principali:
 
 È importante posizionare questa classe nel package principale dell'applicazione (`com.sio.backend`), in modo che la scansione dei componenti possa raggiungere i package sottostanti.
 
-### 5.2 Controller – Gestione delle richieste HTTP
+### 5.2 [Controller](../src/main/java/com/sio/backend/resources/ResourcesController.java) – Gestione delle richieste HTTP
 
 Il Controller rappresenta il punto di ingresso delle richieste HTTP all'interno dell'applicazione.
 
@@ -275,7 +274,7 @@ Il Controller non contiene la logica di recupero dei dati, ma delega questa resp
 
 ---
 
-### 5.3 Service – Logica applicativa
+### 5.3 [Service](../src/main/java/com/sio/backend/resources/pathology/PathologiesService.java) – Logica applicativa
 
 Il Service contiene la logica applicativa dell'applicazione.
 
@@ -336,7 +335,7 @@ Il Service è indipendente dal protocollo HTTP: può essere utilizzato anche da 
 
 ---
 
-### 5.4 Repository – Accesso ai dati
+### 5.4 [Repository](../src/main/java/com/sio/backend/resources/pathology/PathologiesRepository.java) – Accesso ai dati
 
 Il Repository rappresenta il livello di accesso ai dati.
 
@@ -383,7 +382,7 @@ Non è necessario implementare manualmente questi metodi.
 
 ---
 
-### 5.5 Entity – Rappresentazione dei dati
+### 5.5 [Entity](../src/main/java/com/sio/backend/resources/pathology/Pathologies.java) – Rappresentazione dei dati
 
 L'Entity rappresenta un oggetto persistente, generalmente associato a una tabella del database.
 
@@ -436,7 +435,7 @@ Per questo motivo utilizziamo i DTO.
 
 ---
 
-### 5.6 DTO – Data Transfer Object
+### 5.6 [DTO](../src/main/java/com/sio/backend/resources/pathology/PathologiesDTO.java) – Data Transfer Object
 
 È un oggetto utilizzato per trasferire informazioni tra differenti livelli dell'applicazione o tra applicazione e client.
 
@@ -516,7 +515,7 @@ Long id = dto.id();
 
 ---
 
-### 5.7 Mapper – Conversione tra Entity e DTO
+### 5.7 [Mapper](../src/main/java/com/sio/backend/resources/pathology/PathologiesMapper.java) – Conversione tra Entity e DTO
 
 Il Mapper è responsabile della conversione degli oggetti tra differenti rappresentazioni.
 
@@ -564,8 +563,8 @@ In progetti più complessi è possibile utilizzare librerie come MapStruct per g
 
 All'interno del package `generics` troviamo due classi fondamentali:
 
-- `ApiResponse.java`
-- `ApiResponseStatus.java`
+- [ApiResponse.java](../src/main/java/com/sio/backend/generics/ApiResponse.java)
+- [ApiResponseStatus.java](../src/main/java/com/sio/backend/generics/ApiResponseStatus.java)
 
 Queste classi permettono di definire un formato standardizzato per tutte le risposte restituite dalle API.
 
@@ -767,7 +766,7 @@ Ad esempio:
 
 Per evitare di gestire queste situazioni singolarmente all'interno di ogni Controller, Spring mette a disposizione un meccanismo di gestione centralizzata delle eccezioni.
 
-Nel nostro progetto questa responsabilità è affidata a `GlobalExceptionHandler.java`.
+Nel nostro progetto questa responsabilità è affidata a [GlobalExceptionHandler.java](../src/main/java/com/sio/backend/exception/GlobalExceptionHandler.java)
 
 #### Le annotazioni utilizzate
 
