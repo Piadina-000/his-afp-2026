@@ -1,24 +1,24 @@
+# Configurazione specifica per l'ambiente di sviluppo (dev)
 spring:
   datasource:
-    # URL di connessione (di default PostgreSQL su docker espone la 5432)
+    # URL di connessione al database PostgreSQL locale con selezione dello schema 'sio'
     url: jdbc:postgresql://localhost:5432/sio_db?currentSchema=sio
-    username: sio_user
-    password: sio_password
-    driver-class-name: org.postgresql.Driver
+    username: sio_user # Nome utente per l'accesso al database
+    password: sio_password # Password di autenticazione al database
+    driver-class-name: org.postgresql.Driver # Driver JDBC utilizzato per PostgreSQL
 
   jpa:
-    # Mostra le query SQL in console (utilissimo per la didattica!)
-    show-sql: true
+    show-sql: true # Abilita la stampa delle query SQL su console (ottimizzato per la didattica)
     hibernate:
-      # 'none' perché le tabelle sono già create dal file init.sql
-      ddl-auto: none
+      ddl-auto: none # Impostato a 'none' poiché le tabelle sono pre-create tramite script di init
     properties:
       hibernate:
-        format_sql: true
+        format_sql: true # Formatta il codice SQL stampato a console per una maggiore leggibilità
 
+# Configurazione dettagliata dei livelli di logging per il debugging
 logging:
   level:
-    root: info
-    com.sio.backend: debug
-    org.hibernate.sql: debug
-    org.hibernate.type.descriptor.sql: trace
+    root: info # Livello di log globale impostato su INFO
+    com.sio.backend: debug # Livello di log approfondito DEBUG per il pacchetto applicativo SIO
+    org.hibernate.sql: debug # Log delle query SQL eseguite da Hibernate
+    org.hibernate.type.descriptor.sql: trace # Log di tracciamento avanzato per i parametri dei bind SQL

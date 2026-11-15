@@ -1,7 +1,6 @@
 package com.sio.backend.exception;
 
 import com.sio.backend.generics.ApiResponse;
-import com.sio.backend.generics.ApiResponseStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,20 +12,24 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * - EntityNotFoundException -> 404
- * - NoSuchElementException -> 404
- * - MethodArgumentNotValidException -> 400
- * - HttpMessageNotReadableException -> 400
+ * Gestore globale delle eccezioni per l'applicazione SIO.
+ * Intercetta le eccezioni sollevate dai controller e le incapsula
+ * in risposte HTTP standardizzate tramite {@link ApiResponse}.
  */
-
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
+    /**
+     * Gestisce qualsiasi eccezione non prevista (Fallback generale).
+     * Restituisce HTTP 500 Internal Server Error.
+     *
+     * @param ex l'eccezione imprevista catturata
+     * @return ApiResponse con i dettagli dell'errore interno
+     */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleAll(Exception ex){
@@ -40,6 +43,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Gestisce argomenti non validi o richieste malformate.
+     * Restituisce HTTP 400 Bad Request.
+     *
+     * @param ex l'eccezione IllegalArgumentException sollevata
+     * @return ResponseEntity contenente l'ApiResponse di fallimento
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(IllegalArgumentException ex){
         ApiResponse<Void> body = ApiResponse.fail(
@@ -53,6 +63,13 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
+    /**
+     * Gestisce il fallimento nel recupero di un'entità JPA dal database.
+     * Restituisce HTTP 404 Not Found.
+     *
+     * @param ex l'eccezione EntityNotFoundException sollevata
+     * @return ApiResponse con lo stato di fallimento
+     */
     @ExceptionHandler(EntityNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Void> handleNotFound(EntityNotFoundException ex){
@@ -62,6 +79,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Gestisce il tentativo di accesso a elementi inesistenti.
+     * Restituisce HTTP 404 Not Found.
+     *
+     * @param ex l'eccezione NoSuchElementException sollevata
+     * @return ApiResponse con lo stato di fallimento
+     */
     @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Void> handleNoSuchElement(NoSuchElementException ex){
@@ -71,6 +95,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Gestisce gli errori di validazione dei DTO (es. annotazioni @NotNull, @Size).
+     * Restituisce HTTP 400 Bad Request aggregando i messaggi d'errore dei singoli campi.
+     *
+     * @param ex l'eccezione MethodArgumentNotValidException sollevata
+     * @return ApiResponse con l'elenco dei campi non validi
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMethNotValid(MethodArgumentNotValidException ex){
@@ -84,6 +115,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Gestisce corpi di richieste HTTP illeggibili o JSON non parsabili.
+     * Restituisce HTTP 400 Bad Request.
+     *
+     * @param ex l'eccezione HttpMessageNotReadableException sollevata
+     * @return ApiResponse con lo stato di fallimento
+     */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMethNotValid(HttpMessageNotReadableException ex){
@@ -93,6 +131,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    /**
+     * Gestisce errori generati a livello di transazione sul database.
+     * Restituisce HTTP 400 Bad Request.
+     *
+     * @param ex l'eccezione TransactionSystemException sollevata
+     * @return ApiResponse con lo stato di fallimento
+     */
     @ExceptionHandler(TransactionSystemException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleTransaction(TransactionSystemException ex){
