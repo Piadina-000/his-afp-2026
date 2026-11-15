@@ -560,120 +560,430 @@ In progetti più complessi è possibile utilizzare librerie come MapStruct per g
 **Principio fondamentale:** il Mapper deve occuparsi della conversione dei dati, non della logica di business.
 
 ---
-
 ### 5.8 ApiResponse – Struttura standard delle risposte
 
-All'interno del package `generics` troviamo:
+All'interno del package `generics` troviamo due classi fondamentali:
 
 - `ApiResponse.java`
 - `ApiResponseStatus.java`
 
-Queste classi permettono di definire un formato standardizzato per le risposte delle API.
+Queste classi permettono di definire un formato standardizzato per tutte le risposte restituite dalle API.
 
-L'obiettivo è evitare che ogni endpoint restituisca una struttura differente.
+L'obiettivo è fare in modo che ogni endpoint restituisca una struttura uniforme, indipendentemente dal tipo di operazione eseguita o dal risultato ottenuto.
 
-Un possibile esempio di implementazione è:
+#### ApiResponse.java
+
+La classe `ApiResponse` è una classe generica (`ApiResponse<T>`) che rappresenta il contenitore delle risposte dell'applicazione.
+
+L'utilizzo dei Generics permette di associare alla risposta dati di qualsiasi tipo, senza dover creare una classe differente per ogni endpoint.
+
+La struttura della risposta è composta dai seguenti attributi:
+
+| Attributo | Descrizione |
+|---|---|
+| `status` | Stato dell'operazione: SUCCESS, FAIL oppure ERROR. |
+| `statusCode` | Codice HTTP associato alla risposta. |
+| `timestamp` | Data e ora di generazione della risposta. |
+| `data` | Dati restituiti dall'endpoint. |
+| `message` | Messaggio descrittivo dell'operazione o dell'errore. |
+| `errorCode` | Codice identificativo dell'errore applicativo. |
+| `stackTrace` | Informazioni relative allo stack trace, quando previste. |
+
+Esempio semplificato della classe:
 
 ```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private ApiResponseStatus status;
-    private String message;
+    private Integer statusCode;
+    private Instant timestamp;
+
     private T data;
 
-    public static <T> ApiResponse<T> success(T data) {
-
-        ApiResponse<T> response = new ApiResponse<>();
-
-        response.setStatus(ApiResponseStatus.SUCCESS);
-        response.setMessage("Operazione completata");
-        response.setData(data);
-
-        return response;
-    }
-
-    // Getter e Setter
+    private String message;
+    private String errorCode;
+    private String stackTrace;
 }
 ```
 
-L'utilizzo del tipo generico `T` permette di riutilizzare la stessa classe con differenti tipi di dati.
+La classe utilizza alcune annotazioni di Lombok e Jackson:
 
-Ad esempio:
+- `@Data`: genera automaticamente getter, setter, `toString()`, `equals()` e `hashCode()`.
+- `@Builder`: permette di costruire gli oggetti utilizzando il pattern Builder.
+- `@NoArgsConstructor`: genera un costruttore senza parametri.
+- `@AllArgsConstructor`: genera un costruttore con tutti i parametri.
+- `@JsonInclude(JsonInclude.Include.NON_NULL)`: esclude dalla serializzazione JSON gli attributi che hanno valore `null`.
 
-```java
-ApiResponse<PathologiesDTO>
-```
+#### ApiResponseStatus.java
 
-oppure:
-
-```java
-ApiResponse<List<PathologiesDTO>>
-```
-
-Un possibile enum:
+L'enumerazione `ApiResponseStatus` definisce i tre possibili stati di una risposta:
 
 ```java
 public enum ApiResponseStatus {
     SUCCESS,
-    ERROR
+    ERROR,
+    FAIL
 }
 ```
 
-Il vantaggio dei Generics è quello di poter utilizzare una struttura comune senza perdere la sicurezza dei tipi offerta da Java.
+La distinzione tra i tre stati permette di rappresentare situazioni differenti:
+
+- **SUCCESS:** l'operazione è stata completata correttamente.
+- **FAIL:** l'operazione non è andata a buon fine a causa di una condizione gestita, ad esempio una richiesta non valida o una risorsa inesistente.
+- **ERROR:** si è verificato un errore imprevisto durante l'elaborazione della richiesta.
+
+#### Metodi di costruzione delle risposte
+
+La classe `ApiResponse` mette a disposizione metodi statici per creare facilmente le diverse tipologie di risposta.
+
+**1. Success**
+
+Utilizzato quando un'operazione termina correttamente.
+
+```java
+public static <T> ApiResponse<T> success(T data) {
+
+    return ApiResponse.<T>builder()
+            .status(ApiResponseStatus.SUCCESS)
+            .statusCode(HttpStatus.OK.value())
+            .timestamp(Instant.now())
+            .data(data)
+            .build();
+}
+```
+
+È presente anche una versione specifica per le Collection:
+
+```java
+public static <T extends Collection<?>> ApiResponse<T> success(T data) {
+    // Costruzione della risposta SUCCESS
+}
+```
+
+Entrambi i metodi restituiscono una risposta con stato `SUCCESS` e codice HTTP 200.
+
+**2. Error**
+
+Utilizzato per rappresentare un errore applicativo o un errore imprevisto.
+
+```java
+public static <T> ApiResponse<T> error(
+        String message,
+        Integer statusCode,
+        String errorCode
+) {
+
+    return ApiResponse.<T>builder()
+            .status(ApiResponseStatus.ERROR)
+            .statusCode(statusCode)
+            .errorCode(errorCode)
+            .timestamp(Instant.now())
+            .message(message)
+            .build();
+}
+```
+
+È disponibile anche una variante che permette di aggiungere lo stack trace:
+
+```java
+public static <T> ApiResponse<T> error(
+        String message,
+        Integer statusCode,
+        String errorCode,
+        String stackTrace
+) {
+    // Costruzione della risposta ERROR
+}
+```
+
+**3. Fail**
+
+Utilizzato quando un'operazione non può essere completata a causa di una condizione gestita dall'applicazione.
+
+```java
+public static <T> ApiResponse<T> fail(
+        String message,
+        Integer statusCode
+) {
+
+    return ApiResponse.<T>builder()
+            .status(ApiResponseStatus.FAIL)
+            .statusCode(statusCode)
+            .timestamp(Instant.now())
+            .message(message)
+            .build();
+}
+```
+
+È disponibile anche una variante che permette di specificare un codice identificativo dell'errore.
+
+#### Esempi di utilizzo
+
+Una risposta positiva contenente un singolo oggetto potrebbe essere rappresentata così:
+
+```json
+{
+    "status": "SUCCESS",
+    "statusCode": 200,
+    "timestamp": "2026-11-15T10:30:00Z",
+    "data": {
+        "id": 1,
+        "name": "Diabete"
+    }
+}
+```
+
+Una risposta negativa potrebbe invece essere:
+
+```json
+{
+    "status": "FAIL",
+    "statusCode": 404,
+    "timestamp": "2026-11-15T10:30:00Z",
+    "message": "Patologia non trovata"
+}
+```
+
+**Principio fondamentale:** `ApiResponse` permette di uniformare il formato delle risposte dell'applicazione, separando i dati restituiti dall'endpoint dalle informazioni relative all'esito dell'operazione.
 
 ---
 
 ### 5.9 GlobalExceptionHandler – Gestione centralizzata degli errori
 
-Un'applicazione backend deve essere in grado di gestire gli errori in modo uniforme.
-
-Immaginiamo che il client richieda una patologia che non esiste nel database.
-
-Senza una gestione centralizzata, ogni Controller potrebbe dover gestire autonomamente le eccezioni.
-
-Spring mette a disposizione `@RestControllerAdvice`, che permette di intercettare le eccezioni generate dai Controller e gestirle in un unico punto.
-
-Nel nostro progetto troviamo `GlobalExceptionHandler.java`.
-
-Esempio:
-
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(
-        RuntimeException exception
-    ) {
-
-        ApiResponse<Void> response = new ApiResponse<>();
-
-        response.setStatus(ApiResponseStatus.ERROR);
-        response.setMessage(exception.getMessage());
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
-    }
-}
-```
-
-Annotazioni principali:
-
-| Annotazione | Descrizione |
-|---|---|
-| `@RestControllerAdvice` | Definisce un gestore globale delle eccezioni REST. |
-| `@ExceptionHandler` | Identifica il metodo responsabile della gestione di una determinata eccezione. |
-
-È possibile definire gestori differenti per diverse tipologie di errore.
+Durante l'esecuzione di un'applicazione backend possono verificarsi diversi tipi di errore.
 
 Ad esempio:
 
-- `ResourceNotFoundException`: risorsa non trovata (HTTP 404).
-- `MethodArgumentNotValidException`: errore di validazione (HTTP 400).
-- `Exception`: errore generico non previsto (HTTP 500).
+- Il client richiede una risorsa inesistente.
+- Il client invia dati non validi.
+- Il corpo di una richiesta JSON non è leggibile.
+- Si verifica un errore durante una transazione.
+- Si verifica un errore imprevisto durante l'esecuzione dell'applicazione.
 
-**Principio fondamentale:** gli errori devono essere gestiti centralmente, evitando di duplicare codice nei Controller.
+Per evitare di gestire queste situazioni singolarmente all'interno di ogni Controller, Spring mette a disposizione un meccanismo di gestione centralizzata delle eccezioni.
+
+Nel nostro progetto questa responsabilità è affidata a `GlobalExceptionHandler.java`.
+
+#### Le annotazioni utilizzate
+
+La classe utilizza due annotazioni fondamentali:
+
+**@RestControllerAdvice**
+
+Identifica una classe che fornisce funzionalità trasversali ai Controller REST.
+
+Permette di intercettare le eccezioni generate durante l'elaborazione delle richieste HTTP e gestirle centralmente.
+
+**@ExceptionHandler**
+
+Identifica il metodo responsabile della gestione di una determinata tipologia di eccezione.
+
+È possibile definire metodi differenti per gestire eccezioni differenti.
+
+Nel nostro progetto viene utilizzato anche:
+
+**@ResponseStatus**
+
+Permette di specificare il codice HTTP da restituire quando viene gestita una determinata eccezione.
+
+#### Struttura del GlobalExceptionHandler
+
+La classe utilizza Lombok attraverso l'annotazione:
+
+```java
+@Slf4j
+```
+
+Questa annotazione genera automaticamente un logger, accessibile attraverso la variabile `log`, che permette di registrare informazioni ed errori durante l'esecuzione dell'applicazione.
+
+Il nostro `GlobalExceptionHandler` gestisce le seguenti eccezioni:
+
+| Eccezione | Codice HTTP | Descrizione |
+|---|---:|---|
+| `Exception` | 500 | Errore generico e imprevisto. |
+| `IllegalArgumentException` | 400 | Argomento o parametro non valido. |
+| `EntityNotFoundException` | 404 | Entità non trovata. |
+| `NoSuchElementException` | 404 | Elemento richiesto non presente. |
+| `MethodArgumentNotValidException` | 400 | Errore di validazione dei dati. |
+| `HttpMessageNotReadableException` | 400 | Richiesta HTTP non leggibile o JSON non valido. |
+| `TransactionSystemException` | 400 | Errore durante la gestione di una transazione. |
+
+#### Esempi di gestione delle eccezioni
+
+**1. Gestione degli errori generici**
+
+```java
+@ExceptionHandler(Exception.class)
+@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+public ApiResponse<Void> handleAll(Exception ex) {
+
+    log.error("Codifica errore: THX403");
+    log.error(
+        "Errore imprevisto non gestito: {} - StackTrace: {}",
+        ex.getMessage(),
+        ex.getStackTrace()
+    );
+
+    return ApiResponse.error(
+        "Errore inaspettato dal server",
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "THX403"
+    );
+}
+```
+
+Questo metodo intercetta le eccezioni non gestite dagli handler più specifici.
+
+Viene restituito:
+- Codice HTTP 500.
+- Stato applicativo ERROR.
+- Messaggio generico.
+- Codice identificativo dell'errore `THX403`.
+
+Il logger registra inoltre informazioni sull'errore per consentire successive attività di analisi.
+
+**2. Gestione delle risorse non trovate**
+
+```java
+@ExceptionHandler(EntityNotFoundException.class)
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public ApiResponse<Void> handleNotFound(EntityNotFoundException ex) {
+
+    return ApiResponse.fail(
+        ex.getMessage(),
+        HttpStatus.NOT_FOUND.value()
+    );
+}
+```
+
+Quando viene generata un'eccezione `EntityNotFoundException`, viene restituita una risposta con:
+- Codice HTTP 404.
+- Stato applicativo FAIL.
+- Messaggio descrittivo dell'errore.
+
+Lo stesso comportamento viene adottato per `NoSuchElementException`.
+
+**3. Gestione degli errori di validazione**
+
+```java
+@ExceptionHandler(MethodArgumentNotValidException.class)
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public ApiResponse<Void> handleMethNotValid(
+    MethodArgumentNotValidException ex
+) {
+
+    return ApiResponse.fail(
+        ex.getMessage(),
+        HttpStatus.BAD_REQUEST.value(),
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+            .reduce((s1, s2) -> s1 + "; " + s2)
+            .orElse("Validation error")
+    );
+}
+```
+
+Questo metodo gestisce gli errori generati durante la validazione dei dati ricevuti dal client.
+
+Attraverso `getBindingResult().getFieldErrors()` vengono recuperati gli errori relativi ai singoli campi.
+
+Gli errori vengono trasformati in stringhe contenenti:
+- Nome del campo.
+- Messaggio di validazione.
+
+Successivamente vengono aggregati in un'unica stringa.
+
+Ad esempio, se il client invia un nome vuoto e una descrizione non valida, la risposta può contenere informazioni relative a entrambi i campi.
+
+**4. Gestione delle richieste HTTP non leggibili**
+
+```java
+@ExceptionHandler(HttpMessageNotReadableException.class)
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public ApiResponse<Void> handleMethNotValid(
+    HttpMessageNotReadableException ex
+) {
+
+    return ApiResponse.fail(
+        ex.getMessage(),
+        HttpStatus.BAD_REQUEST.value()
+    );
+}
+```
+
+Questo handler viene utilizzato quando Spring non riesce a interpretare correttamente il corpo della richiesta HTTP.
+
+Un esempio tipico è l'invio di un JSON sintatticamente non valido oppure di un valore non convertibile nel tipo Java atteso.
+
+**5. Gestione degli argomenti non validi**
+
+```java
+@ExceptionHandler(IllegalArgumentException.class)
+public ResponseEntity<ApiResponse<Void>> handleBadRequest(
+    IllegalArgumentException ex
+) {
+
+    ApiResponse<Void> body = ApiResponse.fail(
+        ex.getMessage(),
+        HttpStatus.BAD_REQUEST.value()
+    );
+
+    return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(body);
+}
+```
+
+Questo metodo gestisce le eccezioni `IllegalArgumentException`.
+
+A differenza degli altri handler, utilizza `ResponseEntity` per costruire esplicitamente la risposta HTTP, specificando sia lo status sia il body.
+
+**6. Gestione degli errori di transazione**
+
+```java
+@ExceptionHandler(TransactionSystemException.class)
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+public ApiResponse<Void> handleTransaction(
+    TransactionSystemException ex
+) {
+
+    return ApiResponse.fail(
+        ex.getMessage(),
+        HttpStatus.BAD_REQUEST.value()
+    );
+}
+```
+
+Questo handler intercetta le eccezioni relative alla gestione delle transazioni.
+
+Nel nostro progetto vengono ricondotte a una risposta HTTP 400.
+
+#### Differenza tra FAIL ed ERROR
+
+È importante comprendere la distinzione tra i due stati utilizzati nella gestione delle eccezioni.
+
+| Stato | Significato | Esempio |
+|---|---|---|
+| SUCCESS | Operazione completata correttamente. | Recupero di una patologia. |
+| FAIL | Operazione non completata per una condizione gestita. | Patologia inesistente, richiesta non valida. |
+| ERROR | Errore imprevisto del server. | Eccezione non gestita. |
+
+Nel nostro progetto, gli errori specifici vengono generalmente restituiti attraverso `ApiResponse.fail()`, mentre gli errori generici vengono gestiti attraverso `ApiResponse.error()`.
+
+#### Principali vantaggi della gestione centralizzata
+
+- **Centralizzazione:** tutte le eccezioni vengono gestite in un unico punto.
+- **Uniformità:** le risposte di errore mantengono una struttura comune grazie ad `ApiResponse`.
+- **Manutenibilità:** aggiungere una nuova gestione delle eccezioni non richiede modifiche a tutti i Controller.
+- **Logging:** gli errori possono essere registrati per facilitarne l'analisi.
+- **Separazione delle responsabilità:** i Controller e i Service possono concentrarsi sulle rispettive responsabilità senza occuparsi direttamente della costruzione delle risposte HTTP di errore.
+
+**Principio fondamentale:** il `GlobalExceptionHandler` permette di separare la gestione degli errori dalla logica applicativa, garantendo risposte HTTP coerenti e centralizzate.
 
 ---
 
