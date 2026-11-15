@@ -22,7 +22,10 @@
     <p>
       {{struttura()}}
     </p>
-
+  </div>
+  <div>
+    <sio-pathologies-dropdown [selectedPathology]="patho" />
+    {{patho() || 'NOPE'}}
   </div>
 
   <!-- AZIONI -->
