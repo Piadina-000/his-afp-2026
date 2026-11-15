@@ -1,16 +1,18 @@
+# Configurazione globale e attiva di default per l'applicazione SIO
 spring:
   application:
-    name: sio-backend
+    name: sio-backend # Nome identificativo univoco del servizio
   profiles:
     active:
-      - dev
+      - dev # Attiva di default il profilo di sviluppo
 
-# Configurazione porta del backend
+# Configurazione della porta del server embedded Tomcat
 server:
-  port: 8080
+  port: 8080 # Porta di ascolto delle richieste HTTP in ingresso
 
+# Configurazione della documentazione interattiva OpenAPI / Swagger UI
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /api-docs # Endpoint per esporre il file JSON delle specifiche OpenAPI
   swagger-ui:
-    path: /swagger-ui.html
+    path: /swagger-ui.html # Endpoint per accedere all'interfaccia grafica di test Swagger UI

@@ -1,25 +1,24 @@
+# Configurazione specifica per l'ambiente di produzione (prod)
 spring:
   application:
-    name: sio-backend
+    name: sio-backend # Nome identificativo del servizio
 
   datasource:
-    # URL di connessione (di default PostgreSQL su docker espone la 5432)
-    url: jdbc:postgresql://localhost:5432/sio_db?currentSchema=sio
-    username: sio_user
-    password: sio_password
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/sio_db?currentSchema=sio # URL di connessione al database PostgreSQL
+    username: sio_user # Nome utente del database
+    password: sio_password # Password del database
+    driver-class-name: org.postgresql.Driver # Driver JDBC per PostgreSQL
   jpa:
-    # Mostra le query SQL in console (utilissimo per la didattica!)
-    show-sql: false
+    show-sql: false # Disabilita la stampa delle query SQL per motivi di sicurezza e performance
     hibernate:
-      # 'none' perché le tabelle sono già create dal file init.sql
-      ddl-auto: validate
+      ddl-auto: validate # Valida la coerenza dello schema del database rispetto alle entità JPA
 
-# Configurazione porta del backend
+# Configurazione della porta del server
 server:
   port: 8080
 
+# Configurazione restrittiva dei log per l'ambiente produttivo
 logging:
   level:
-    root: warn
-    com.sio.backend: info
+    root: warn # Livello root impostato su WARN per limitare i log superflui
+    com.sio.backend: info # Livello INFO per il monitoraggio operativo del codice SIO

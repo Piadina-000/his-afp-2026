@@ -1,24 +1,22 @@
+# Configurazione specifica per l'ambiente di test automatizzati
 spring:
   application:
-    name: sio-backend
+    name: sio-backend # Nome identificativo del servizio
 
   datasource:
-    # URL di connessione (di default PostgreSQL su docker espone la 5432)
-    url: jdbc:postgresql://localhost:5432/sio_db?currentSchema=sio
-    username: sio_user
-    password: sio_password
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/sio_db?currentSchema=sio # Connessione PostgreSQL di test
+    username: sio_user # Nome utente DB
+    password: sio_password # Password DB
+    driver-class-name: org.postgresql.Driver # Driver JDBC
 
   jpa:
-    # Mostra le query SQL in console (utilissimo per la didattica!)
-    show-sql: true
+    show-sql: true # Abilita la visualizzazione delle query SQL durante l'esecuzione dei test
     hibernate:
-      # 'none' perché le tabelle sono già create dal file init.sql
-      ddl-auto: none
+      ddl-auto: none # Nessuna alterazione automatica dello schema
     properties:
       hibernate:
-        format_sql: false
+        format_sql: false # Mantiene disattivata la formattazione estesa dell'SQL
 
-# Configurazione porta del backend
+# Configurazione della porta del server
 server:
   port: 8080
